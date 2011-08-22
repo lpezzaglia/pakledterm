@@ -1,6 +1,8 @@
-.TH ST 1 st-VERSION
+.TH ST "1" "" "pakledterm VERSION" "User Commands"
 .SH NAME
-st \- simple terminal
+pakledterm \- Terminal based on st (simple terminal), with "enhancements"
+
+
 .SH SYNOPSIS
 .B st
 .RB [ \-c
@@ -11,8 +13,19 @@ st \- simple terminal
 .RB [ \-e
 .IR cmd ]
 .SH DESCRIPTION
-.B st
-is a simple terminal emulator.
+.B pakledterm
+is based on st-STVERSION, with the following patches:
+.SH PAKLED PATCHES
+.TP
+.B +pakledfonts patch:
+Use F11 and F12 to cycle through fonts.
+.TP
+.B +customcolors: 
+See config.h for color definitions
+.SH NON-PAKLED PATCHES
+.TP
+.B +brightisbold patch by Stefan Mark:
+See: http://lists.suckless.org/dev/1104/7414.html
 .SH OPTIONS
 .TP
 .B \-t title

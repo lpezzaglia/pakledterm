@@ -1,5 +1,7 @@
-# st version
-VERSION = 0.1.1
+# $Id: $
+# versions
+VERSION = 0.0.1
+STVERSION = 0.1.1
 
 # Customize below to fit your system
 
@@ -12,10 +14,10 @@ X11LIB = /usr/X11R6/lib
 
 # includes and libs
 INCS = -I. -I/usr/include -I${X11INC}
-LIBS = -L/usr/lib -lc -L${X11LIB} -lX11 -lutil
+LIBS = -lc -L${X11LIB} -lX11 -lutil
 
 # flags
-CPPFLAGS = -DVERSION=\"${VERSION}\"
+CPPFLAGS = -DVERSION=\"${VERSION}\" -DSTVERSION=\"${STVERSION}\"
 CFLAGS += -std=c99 -pedantic -Wall -Os ${INCS} ${CPPFLAGS}
 LDFLAGS += -s ${LIBS}
 

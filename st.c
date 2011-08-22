@@ -1,3 +1,6 @@
+/* $Id: st.c 6 2011-08-22 04:15:05Z larry $ */
+#define ST_C_REVISION "st.c $Rev: 7$ $Date: 2011-08-21 21:50:22 -0700 (Sun, 21 Aug 2011) $"
+
 /* See LICENSE for licence details. */
 #define _XOPEN_SOURCE 600
 #include <ctype.h>
@@ -31,8 +34,14 @@
 #endif
 
 #define USAGE \
-	"st-" VERSION ", (c) 2010 st engineers\n" \
-	"usage: st [-t title] [-c class] [-v] [-e cmd]\n"
+	"pakledterm-" VERSION ", (Based on st-" STVERSION " (c) 2010 st engineers)\n\n\n\n" \
+    "Pakled patches:\n\n" \
+    "  +pakledfonts patch: " PAKLEDFONTS_VERSION "\n\t" CONFIG_H_REVISION "\n\t" ST_C_REVISION "\n\n" \
+    "  +customcolors: " COLORS_VERSION "\n\t" CONFIG_H_REVISION "\n\n" \
+    "\n\nNon-Pakled patches:\n\n" \
+    "  +brightisbold patch by Stefan Mark (http://lists.suckless.org/dev/1104/7414.html)\n\n" \
+	"\n\n(Do not bother the st devs about problems with pakledterm.)\n\n" \
+	"Usage: st [-t title] [-c class] [-v] [-e cmd]\n"
 
 /* Arbitrary sizes */
 #define ESC_TITLE_SIZ 256
@@ -215,6 +224,10 @@ static void bpress(XEvent *);
 static void bmotion(XEvent *);
 static void selnotify(XEvent *);
 static void selrequest(XEvent *);
+
+static void chfont();
+static void plusfont();
+static void minusfont();
 
 static void selinit(void);
 static inline int selected(int, int);
@@ -1493,17 +1506,19 @@ xgetfontinfo(XFontSet set, int *ascent, int *descent, short *lbearing, short *rb
 	}
 }
 
+/* Begin pakledfonts */
 void
 initfonts(char *fontstr, char *bfontstr)
 {
 	if((dc.font.set = xinitfont(fontstr)) == NULL ||
 	   (dc.bfont.set = xinitfont(bfontstr)) == NULL)
-		die("Can't load font %s\n", dc.font.set ? BOLDFONT : FONT);
+		die("Can't load font %s\n", dc.font.set ? bfontstr : fontstr);
 	xgetfontinfo(dc.font.set, &dc.font.ascent, &dc.font.descent,
 	    &dc.font.lbearing, &dc.font.rbearing);
 	xgetfontinfo(dc.bfont.set, &dc.bfont.ascent, &dc.bfont.descent,
 	    &dc.bfont.lbearing, &dc.bfont.rbearing);
 }
+/* End pakledfonts */
 
 void
 xinit(void) {
@@ -1514,8 +1529,11 @@ xinit(void) {
 		die("Can't open display\n");
 	xw.scr = XDefaultScreen(xw.dpy);
 	
-	/* font */
-	initfonts(FONT, BOLDFONT);
+	/* Begin pakledfonts */
+    makemyfontsgo();
+	//initfonts(FONT, BOLDFONT);
+	initfonts(currentfont->font, currentfont->boldfont);
+	/* End pakledfonts */
 
 	/* XXX: Assuming same size for bold font */
  	xw.cw = dc.font.rbearing - dc.font.lbearing;
@@ -1577,8 +1595,17 @@ xdraws(char *s, Glyph base, int x, int y, int charlen, int bytelen) {
 
 	if(base.mode & ATTR_REVERSE)
 		xfg = dc.col[base.bg], xbg = dc.col[base.fg];
+#ifndef BOLD_IS_BRIGHT
 	else
 		xfg = dc.col[base.fg], xbg = dc.col[base.bg];
+#else
+    	else {
+    		if(base.mode & ATTR_BOLD && BETWEEN(base.fg, 0, 7))
+    			xfg = dc.col[base.fg+8], xbg = dc.col[base.bg];
+    		else
+    			xfg = dc.col[base.fg], xbg = dc.col[base.bg];
+    	}
+#endif
 
 	XSetBackground(xw.dpy, dc.gc, xbg);
 	XSetForeground(xw.dpy, dc.gc, xfg);
@@ -1745,14 +1772,53 @@ focus(XEvent *ev) {
 	draw(SCREEN_UPDATE);
 }
 
+/* Begin pakledfonts */
 char*
 kmap(KeySym k) {
 	int i;
 	for(i = 0; i < LEN(key); i++)
 		if(key[i].k == k)
 			return (char*)key[i].s;
+    if(k == XK_F11) {
+        minusfont();
+    }
+    if(k == XK_F12) {
+        plusfont();
+    }
 	return NULL;
 }
+
+void plusfont () {
+    if (currentfont->bigger) {
+        currentfont=currentfont->bigger;
+        chfont();
+    }
+}
+
+void minusfont () {
+    if (currentfont->smaller) {
+        currentfont=currentfont->smaller;
+        chfont();
+    }
+}
+
+void chfont () {
+    initfonts(currentfont->font,currentfont->boldfont);
+
+
+    xw.cw = dc.font.rbearing - dc.font.lbearing;
+    xw.ch = dc.font.ascent + dc.font.descent;
+    
+	int col = (xw.w - 2*BORDER) / xw.cw;
+	int row = (xw.h - 2*BORDER) / xw.ch;
+	if(col == term.col && row == term.row)
+		return;
+	if(tresize(col, row))
+		draw(SCREEN_REDRAW);
+	ttyresize(col, row);
+	xresize(col, row);
+}
+/* End pakledfonts */
 
 void
 kpress(XEvent *ev) {

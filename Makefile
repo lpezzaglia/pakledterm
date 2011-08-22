@@ -46,7 +46,7 @@ install: all
 	@chmod 755 ${DESTDIR}${PREFIX}/bin/st
 	@echo installing manual page to ${DESTDIR}${MANPREFIX}/man1
 	@mkdir -p ${DESTDIR}${MANPREFIX}/man1
-	@sed "s/VERSION/${VERSION}/g" < st.1 > ${DESTDIR}${MANPREFIX}/man1/st.1
+	@sed -e "s/STVERSION/${STVERSION}/g" -e "s/VERSION/${VERSION}/g" < st.1 > ${DESTDIR}${MANPREFIX}/man1/st.1
 	@chmod 644 ${DESTDIR}${MANPREFIX}/man1/st.1
 	@tic -s st.info
 
